@@ -109,7 +109,7 @@ def learn2(df):
 
 
 def main():
-    # df = clean_data("train.csv")
+    df = clean_data("train.csv")
     learn2(df)
     # print(df[['Survived']].as_matrix().transpose())
     # i = 0
