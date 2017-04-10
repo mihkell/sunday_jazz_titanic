@@ -95,7 +95,7 @@ def learn2(df):
     linear_model = tf.matmul(x, W) + b
     y = tf.placeholder(tf.float32)
 
-    loss = tf.reduce_sum(tf.abs(linear_model)-y)
+    loss = tf.reduce_sum(tf.abs(linear_model-y))
     # optimizer
     optimizer = tf.train.GradientDescentOptimizer(0.01)
     train = optimizer.minimize(loss)
@@ -106,7 +106,7 @@ def learn2(df):
     init = tf.global_variables_initializer()
     sess = tf.Session()
     sess.run(init)
-    range_val = 20
+    range_val = 60
     for i in range(range_val):
         for train_x, train_y in zip(x_train, y_train):
             sess.run(train, {x: [train_x], y: [train_y]})
