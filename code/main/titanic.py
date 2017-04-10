@@ -10,15 +10,38 @@ resource_path = '../../data/'
 file_name = 'picled_data.pickle'
 
 
+def normalize(df):
+
+    AGE = 'Age'
+    ageMax = df[AGE].max()
+    ageMin = df[AGE].min()
+    print(ageMax, ageMin)
+    df[AGE] = (df[AGE]-ageMin)/(ageMax-ageMin)
+    print(df[AGE].max(), df[AGE].min())
+
+    FARE = 'Fare'
+    fareMax = df[FARE].max()
+    fareMin = df[FARE].min()
+    print(fareMax, fareMin)
+    df[FARE] = (df[FARE]-fareMin)/(fareMax-fareMin)
+    print(df[FARE].max(), df[FARE].min())
+
+    return df
+
+
 def clean_data(data_filename):
     file_path = resource_path + file_name
-    if not os.path.exists(file_path):
+    if True: #not os.path.exists(file_path):
         df = pd.read_csv('../../data/' + data_filename)
         SEX = 'Sex'
         df = df[['Survived', 'Pclass', 'Age', 'Fare', SEX]]
         df = df.dropna()
+
         df[SEX] = LabelBinarizer().fit_transform(df[SEX])
         df['Sex2'] = (df[SEX] - 1) * -1
+
+        df = normalize(df)
+
         pd.to_pickle(df, file_path)
     return pd.read_pickle(file_path)
 
@@ -83,16 +106,6 @@ def learn2(df):
     train = optimizer.minimize(loss)
 
     # Our data example
-    # x_train = [[3., 22., 7.25, 1., 0.],
-    #            [1., 38., 71.2833, 0., 1.],
-    #            [3., 26., 7.925, 0., 1.],
-    #            [1., 35., 53.1, 0., 1.],
-    #            [3., 35., 8.05, 1., 0.]]
-    # y_train = [[0],
-    #            [1],
-    #            [1],
-    #            [1],
-    #            [0]]
     x_train, y_train = get_features_labels(df)
     # training loop
     init = tf.global_variables_initializer()
