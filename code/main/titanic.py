@@ -70,20 +70,17 @@ def learn(data):
 
 def learn2(df):
     # Model parameters
-    W = tf.Variable([.3], tf.float32)
-    b = tf.Variable([-.3], tf.float32)
+    W = tf.Variable(tf.ones([5, 1]), tf.float32)
+    b = tf.Variable(tf.ones(1), tf.float32)
     # Model input and output
-    x = tf.placeholder(tf.float32)
-    linear_model = W * x + b
+    x = tf.placeholder(tf.float32, shape=(None, 5))
+    linear_model = tf.matmul(x, W) + b
     y = tf.placeholder(tf.float32)
-    # loss
-    loss = tf.reduce_sum(tf.square(linear_model - y))  # sum of the squares
+
+    loss = tf.reduce_sum(tf.abs(linear_model)-y)
     # optimizer
     optimizer = tf.train.GradientDescentOptimizer(0.01)
     train = optimizer.minimize(loss)
-    # training data
-    x_train = [[1.,2.],[2.,2.],[3.,2.],[4.,2.]]
-    y_train = [[1],[2],[3],[4]]
 
     # Our data example
     # x_train = [[3., 22., 7.25, 1., 0.],
@@ -96,16 +93,22 @@ def learn2(df):
     #            [1],
     #            [1],
     #            [0]]
+    x_train, y_train = get_features_labels(df)
     # training loop
     init = tf.global_variables_initializer()
     sess = tf.Session()
-    sess.run(init)  # reset values to wrong
-    for i in range(100):
-        sess.run(train, {x: x_train, y: y_train})
+    sess.run(init)
+    range_val = 20
+    for i in range(range_val):
+        for train_x, train_y in zip(x_train, y_train):
+            sess.run(train, {x: [train_x], y: [train_y]})
+            # if range_val == j:
+                # curr_W, curr_b, curr_loss = sess.run([W, b, loss], {x: x_train, y: y_train})
+                # print("W: %s b: %s loss: %s" % (curr_W, curr_b, curr_loss))
 
-    # evaluate training accuracy
     curr_W, curr_b, curr_loss = sess.run([W, b, loss], {x: x_train, y: y_train})
     print("W: %s b: %s loss: %s" % (curr_W, curr_b, curr_loss))
+    # evaluate training accuracy
 
 
 def main():
