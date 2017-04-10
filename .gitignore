@@ -1,3 +1,4 @@
 code/main/train/events.out.*
 ********.pickle
 .idea
+.DS_Store

@@ -15,23 +15,18 @@ def normalize(df):
     AGE = 'Age'
     ageMax = df[AGE].max()
     ageMin = df[AGE].min()
-    print(ageMax, ageMin)
     df[AGE] = (df[AGE]-ageMin)/(ageMax-ageMin)
-    print(df[AGE].max(), df[AGE].min())
 
     FARE = 'Fare'
     fareMax = df[FARE].max()
     fareMin = df[FARE].min()
-    print(fareMax, fareMin)
     df[FARE] = (df[FARE]-fareMin)/(fareMax-fareMin)
-    print(df[FARE].max(), df[FARE].min())
 
     return df
 
-
 def clean_data(data_filename):
     file_path = resource_path + file_name
-    if True: #not os.path.exists(file_path):
+    if not os.path.exists(file_path):
         df = pd.read_csv('../../data/' + data_filename)
         SEX = 'Sex'
         df = df[['Survived', 'Pclass', 'Age', 'Fare', SEX]]
