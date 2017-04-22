@@ -1,6 +1,7 @@
 import os
 
 import pandas as pd
+import numpy as np
 import tensorflow as tf
 from sklearn.preprocessing import LabelBinarizer
 
@@ -44,56 +45,14 @@ def clean_data(data_filename):
 def get_features_labels(data):
     return data[['Pclass', 'Age', 'Fare', 'Sex', 'Sex2']].as_matrix(), data[['Survived']].as_matrix()
 
-
-def learn(data):
-    features, labels = get_features_labels(data)
-    print(features[:3], labels[:3])
-    with tf.name_scope('Variable_declaration'):
-        W = tf.Variable(tf.ones([5, 1]), name="Weight")
-        b = tf.Variable([-.3], name="Bias")
-
-    input_ = tf.placeholder(tf.float32, shape=(None, 5), name="input")
-    target = tf.placeholder(tf.float32, name="target")
-
-    with tf.name_scope('linear_model'):
-        linear_model = tf.matmul(input_, W) + b
-
-    with tf.name_scope('optimizing'):
-        loss = tf.abs(tf.reduce_sum(linear_model - target))
-
-        optimizer = tf.train.GradientDescentOptimizer(0.01)
-        train = optimizer.minimize(loss)
-
-    tf.summary.histogram('loss', loss)
-    tf.summary.histogram('W', W)
-    tf.summary.histogram('b', b)
-
-    init = tf.global_variables_initializer()
-    sess = tf.Session()
-    sess.run(init)
-    merged = tf.summary.merge_all()
-    train_writer = tf.summary.FileWriter('./train', sess.graph)
-
-    for i in range(5):
-        summary, _ = sess.run([merged, train], feed_dict={input_: features, target: labels})
-        train_writer.add_summary(summary, i)
-
-
-
-        # curr_W, curr_b, curr_loss = sess.run([W, b, loss], {input_: features, target: labels})
-        # print("W: %s b: %s loss: %s" % (curr_W, curr_b, curr_loss))
-        # curr_W, curr_b, curr_loss = sess.run([W, b, loss], {input_: features, target: labels})
-        # print("W: %s b: %s loss: %s" % (curr_W, curr_b, curr_loss))
-
-
-def learn2(df):
+def learn(df):
     # Model parameters
     W = tf.Variable(tf.ones([5, 1]), tf.float32)
     b = tf.Variable(tf.ones(1), tf.float32)
     # Model input and output
     x = tf.placeholder(tf.float32, shape=(None, 5))
     linear_model = tf.matmul(x, W) + b
-    y = tf.placeholder(tf.float32)
+    y = tf.placeholder(tf.float32, shape=(None, 1))
 
     loss = tf.reduce_sum(tf.abs(linear_model-y))
     # optimizer
@@ -106,13 +65,15 @@ def learn2(df):
     init = tf.global_variables_initializer()
     sess = tf.Session()
     sess.run(init)
-    range_val = 60
+    range_val = 600
+    batch_size = 5
     for i in range(range_val):
-        for train_x, train_y in zip(x_train, y_train):
-            sess.run(train, {x: [train_x], y: [train_y]})
-            # if range_val == j:
-                # curr_W, curr_b, curr_loss = sess.run([W, b, loss], {x: x_train, y: y_train})
-                # print("W: %s b: %s loss: %s" % (curr_W, curr_b, curr_loss))
+        for batch_start in range(0, len(x_train) - batch_size, batch_size):
+            batch_end = batch_start + batch_size
+            sess.run(train, {x: x_train[batch_start:batch_end], y: y_train[batch_start:batch_end]})
+            # if range_val%100 == 0:
+            #     curr_W, curr_b, curr_loss = sess.run([W, b, loss], {x: x_train, y: y_train})
+            #     print("W: %s b: %s loss: %s" % (curr_W, curr_b, curr_loss))
 
     curr_W, curr_b, curr_loss = sess.run([W, b, loss], {x: x_train, y: y_train})
     print("W: %s b: %s loss: %s" % (curr_W, curr_b, curr_loss))
@@ -121,7 +82,7 @@ def learn2(df):
 
 def main():
     df = clean_data("train.csv")
-    learn2(df)
+    learn(df)
     # print(df[['Survived']].as_matrix().transpose())
     # i = 0
     # for row in df.iterrows():
