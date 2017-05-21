@@ -1,5 +1,3 @@
-import os
-
 import pandas as pd
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
@@ -33,13 +31,12 @@ def normalize(df):
     return df
 
 
-def clean_data(data_filename):
+def clean_data(data_filename, column_names):
     file_path = resource_path + file_name
     # if not os.path.exists(file_path):
     df = pd.read_csv('../../data/' + data_filename)
 
-    # df = df[[CLASS, AGE, FARE, SEX]] # FIXME add 'Survived'
-    df = df[['Survived', CLASS, AGE, FARE, SEX]] # FIXME add 'Survived'
+    df = df[column_names]
 
     df[AGE_MISSING] = df[AGE].isnull()
     df[AGE_MISSING] = LabelBinarizer().fit_transform(df[AGE_MISSING]) * 2 - 1
@@ -83,10 +80,11 @@ def learn(df, test_set):
                                                       activation_fn=tf.nn.softplus,
                                                       weights_initializer=tf.random_normal_initializer(seed=1))
 
-    logits = tf.contrib.layers.fully_connected(layer_sigmoid,
-                                               1,
-                                               activation_fn=tf.sigmoid,
-                                               weights_initializer=tf.random_normal_initializer(seed=1))
+    logits = tf.layers.dense(layer_sigmoid,
+                             1,
+                             activation=tf.sigmoid,
+                             name="logits")
+    print(logits)
     result = tf.placeholder(tf.float32, shape=(None, 1), name='result')
     result = logits * 1.0
 
@@ -102,7 +100,7 @@ def learn(df, test_set):
     loss = (tf.reduce_sum(labels * (1 - logits)) / (tf.reduce_sum(labels) + 0.0001) + \
             tf.reduce_sum((1 - labels) * logits) / (tf.reduce_sum(1 - labels) + 0.0001)) * 0.5
     tf.summary.scalar('loss', 1 - loss)
-    optimizer = tf.train.AdadeltaOptimizer(learning_rate)#, global_step=tf.placeholder(tf.int64,
+    optimizer = tf.train.AdadeltaOptimizer(learning_rate)  # , global_step=tf.placeholder(tf.int64,
     # name='count'))
     train = optimizer.minimize(loss)
 
@@ -116,7 +114,7 @@ def learn(df, test_set):
         sess.run(tf.global_variables_initializer())
         batch_size = 10
         count = 1
-        for i in range(3):  # 2 rounds of training
+        for i in range(2500):  # 2 rounds of training
             for batch_start in range(0, len(x_train) - batch_size, batch_size):
                 count += 1
                 batch_end = batch_start + batch_size
@@ -126,7 +124,7 @@ def learn(df, test_set):
                                                                labels: labels_,
                                                                learning_rate: 0.01,
                                                                'input_size:0': labels_.shape[0]
-                                                               #'count:0': count
+                                                               # 'count:0': count
                                                                })
                 train_writer.add_summary(merged_summary, count)
 
@@ -134,28 +132,28 @@ def learn(df, test_set):
                                               {inputs: x_test, labels: y_test,
                                                'input_size:0': y_test.shape[0]})
         print(i, '1 - loss/accuracy:', 1 - ran_loss_val, accuracy_val)
-        saver.save(sess, 'my_test_model')
+        saver.save(sess, 'my_test_model.ckpt')
 
 
 def compute_validation():
-    validation_data = clean_data('test.csv')
+    validation_data = clean_data('test.csv', [CLASS, AGE, FARE, SEX])
 
     sess = tf.Session()
-    new_saver = tf.train.import_meta_graph('my_test_model.meta')
-    new_saver.restore(sess, tf.train.latest_checkpoint('./'))
+    new_saver = tf.train.Saver()
+    new_saver.restore(sess, "./my_test_model.ckpt")
 
-    sess.run(tf.global_variables_initializer())
+    # sess.run(tf.global_variables_initializer())
 
-
-    graph = tf.get_default_graph()
-    w1 = graph.get_tensor_by_name("input_size:0")
+    # graph = tf.get_default_graph()
+    # w1 = graph.get_tensor_by_name("input_size:0")
     # w1 = graph.get_tensor_by_name("inputs:0")
     # w2 = graph.get_tensor_by_name("logits:0")
 
-    print(sess.run(w1, {'input_size:0': validation_data.shape[0]}))
+    print(sess.run('logits/Sigmoid:0', {'inputs:0': validation_data, 'input_size:0': validation_data.shape[0]}))
+
 
 def main():
-    data = clean_data("train.csv")
+    data = clean_data("train.csv",['Survived', CLASS, AGE, FARE, SEX])
     print('data-size-total:', data.shape[0])
     train_set, test_test = train_test_split(data, random_state=1)
 
@@ -163,5 +161,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
-    # compute_validation()
+    # main()
+    compute_validation()
